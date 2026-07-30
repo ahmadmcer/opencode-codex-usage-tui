@@ -1,0 +1,47 @@
+{
+  "name": "opencode-codex-usage",
+  "version": "1.0.0",
+  "description": "OpenCode TUI plugin that shows remaining ChatGPT Codex usage limits in the sidebar",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./server.ts",
+    "./tui": "./tui.ts"
+  },
+  "bin": {
+    "opencode-codex-usage": "./install.mjs"
+  },
+  "files": [
+    "server.ts",
+    "tui.ts",
+    "install.mjs",
+    "install.ps1",
+    "LICENSE",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "@opencode-ai/plugin": ">=1.14.0",
+    "@opentui/core": ">=0.2.6",
+    "@opentui/keymap": ">=0.2.6",
+    "@opentui/solid": ">=0.2.6"
+  },
+  "peerDependenciesMeta": {
+    "@opentui/core": { "optional": true },
+    "@opentui/keymap": { "optional": true },
+    "@opentui/solid": { "optional": true }
+  },
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "codex",
+    "chatgpt",
+    "usage",
+    "limits",
+    "sidebar"
+  ],
+  "homepage": "https://github.com/ahmadmcer/opencode-codex-usage",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ahmadmcer/opencode-codex-usage.git"
+  }
+}

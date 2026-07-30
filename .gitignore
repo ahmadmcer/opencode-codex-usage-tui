@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.log
+codex-usage.json
+codex-usage-debug.json
+.env
+.env.*
