@@ -27,7 +27,7 @@ function parseArgs(argv) {
 }
 
 function printHelp() {
-  console.log(`Install opencode-codex-usage TUI plugin\n\nUsage:\n  npx opencode-codex-usage\n  npx opencode-codex-usage --config-dir <path>\n`)
+  console.log(`Install @ahmadmcer/opencode-codex-usage TUI plugin\n\nUsage:\n  npx github:ahmadmcer/opencode-codex-usage\n  npx github:ahmadmcer/opencode-codex-usage --config-dir <path>\n`)
 }
 
 function readJson(path) {

@@ -15,10 +15,18 @@ It reads the same internal Codex usage data shown by the ChatGPT Codex usage das
 
 ## Install
 
-Install with `npx`:
+Install with `npx` from GitHub:
 
 ```powershell
-npx opencode-codex-usage
+npx github:ahmadmcer/opencode-codex-usage
+```
+
+Do not use `npx opencode-codex-usage`; that unscoped npm package name belongs to another project.
+
+If this package is published to npm later, use the scoped package name:
+
+```powershell
+npx @ahmadmcer/opencode-codex-usage
 ```
 
 For local development from this folder:
