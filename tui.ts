@@ -7,6 +7,7 @@ import { homedir } from "os"
 
 const CONFIG_FILE = join(homedir(), ".config", "opencode", "codex-usage.json")
 const DEBUG_FILE = join(homedir(), ".config", "opencode", "codex-usage-debug.json")
+const CODEX_AUTH_FILE = join(process.env.CODEX_HOME?.trim() || join(homedir(), ".codex"), "auth.json")
 const USAGE_URL = "https://chatgpt.com/backend-api/wham/usage"
 const DASHBOARD_URL = "https://chatgpt.com/codex/settings/usage"
 const REFRESH_MS = 60_000
@@ -15,6 +16,7 @@ const COLLAPSED_KV_KEY = "codex-usage.collapsed"
 interface Config {
   accessToken: string
   accountId?: string
+  source: "env" | "config" | "codex"
 }
 
 interface UsageWindowPayload {
@@ -73,23 +75,73 @@ function toStringValue(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined
 }
 
-function loadConfig(): Config | null {
-  const envToken = process.env.OPENCODE_CODEX_ACCESS_TOKEN?.trim()
-  const envAccountId = process.env.OPENCODE_CODEX_ACCOUNT_ID?.trim()
-  if (envToken) return { accessToken: envToken, accountId: envAccountId || undefined }
+function optionalRecord(value: unknown): Record<string, unknown> {
+  return isRecord(value) ? value : {}
+}
 
+function pickString(...values: unknown[]): string | undefined {
+  for (const value of values) {
+    const stringValue = toStringValue(value)
+    if (stringValue) return stringValue
+  }
+  return undefined
+}
+
+function loadCodexAuthConfig(): Config | null {
   try {
-    if (!existsSync(CONFIG_FILE)) return null
-    const cfg = JSON.parse(readFileSync(CONFIG_FILE, "utf-8"))
-    const accessToken = toStringValue(cfg?.accessToken ?? cfg?.access_token)
+    if (!existsSync(CODEX_AUTH_FILE)) return null
+    const auth = JSON.parse(readFileSync(CODEX_AUTH_FILE, "utf-8"))
+    const tokens = optionalRecord(auth?.tokens)
+    const agentIdentity = optionalRecord(auth?.agent_identity ?? auth?.agentIdentity)
+    const accessToken = pickString(
+      tokens.access_token,
+      tokens.accessToken,
+      auth?.access_token,
+      auth?.accessToken,
+      auth?.personal_access_token,
+    )
     if (!accessToken) return null
     return {
       accessToken,
-      accountId: toStringValue(cfg?.accountId ?? cfg?.account_id),
+      accountId: pickString(
+        agentIdentity.account_id,
+        agentIdentity.accountId,
+        agentIdentity.workspace_id,
+        agentIdentity.workspaceId,
+        auth?.account_id,
+        auth?.accountId,
+        auth?.workspace_id,
+        auth?.workspaceId,
+      ),
+      source: "codex",
     }
   } catch {
     return null
   }
+}
+
+function loadConfig(): Config | null {
+  const envToken = process.env.OPENCODE_CODEX_ACCESS_TOKEN?.trim()
+  const envAccountId = process.env.OPENCODE_CODEX_ACCOUNT_ID?.trim()
+  if (envToken) return { accessToken: envToken, accountId: envAccountId || undefined, source: "env" }
+
+  try {
+    if (existsSync(CONFIG_FILE)) {
+      const cfg = JSON.parse(readFileSync(CONFIG_FILE, "utf-8"))
+      const accessToken = toStringValue(cfg?.accessToken ?? cfg?.access_token)
+      if (accessToken) {
+        return {
+          accessToken,
+          accountId: toStringValue(cfg?.accountId ?? cfg?.account_id),
+          source: "config",
+        }
+      }
+    }
+  } catch {
+    return loadCodexAuthConfig()
+  }
+
+  return loadCodexAuthConfig()
 }
 
 function resetInSeconds(window: UsageWindowPayload): number {
@@ -189,7 +241,11 @@ async function fetchOnce() {
 
     const res = await fetch(USAGE_URL, { headers })
     if (res.status === 401 || res.status === 403) {
-      state = { ...state, status: "error", message: "token expired or unauthorized" }
+      state = {
+        ...state,
+        status: "error",
+        message: cfg.source === "codex" ? "token expired; run codex login" : "token expired or unauthorized",
+      }
       return
     }
     if (res.status === 429) {
@@ -367,7 +423,7 @@ const tui: TuiPlugin = async (api) => {
             clearWindows()
             setNodeText(creditsVal, "")
             setNodeText(resetsVal, "")
-            setNodeText(statusVal, `set OPENCODE_CODEX_ACCESS_TOKEN\nor ${CONFIG_FILE}\n${DASHBOARD_URL}`)
+            setNodeText(statusVal, `run codex login\nchecked ${CODEX_AUTH_FILE}\nor set OPENCODE_CODEX_ACCESS_TOKEN`)
           } else if (state.status === "error") {
             setNodeText(planVal, "")
             clearWindows()

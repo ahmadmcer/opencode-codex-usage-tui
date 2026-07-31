@@ -11,7 +11,8 @@ It reads the same internal Codex usage data shown by the ChatGPT Codex usage das
 - Displays reset timers below each usage row and aligned to the right
 - Shows the ChatGPT plan in uppercase, for example `PLUS`
 - Supports collapsed and expanded sidebar display
-- Supports token from environment variables or `~/.config/opencode/codex-usage.json`
+- Automatically reads Codex CLI auth from `~/.codex/auth.json`
+- Supports token override from environment variables or `~/.config/opencode/codex-usage.json`
 
 ## Install
 
@@ -53,14 +54,32 @@ Restart OpenCode after installing. TUI plugins are loaded at startup.
 
 ## Configure Auth
 
-Preferred for a temporary shell session:
+Default flow:
+
+```powershell
+codex login
+```
+
+The plugin automatically reads the Codex CLI token from:
+
+```text
+~/.codex/auth.json
+```
+
+If you use a custom Codex home, set `CODEX_HOME`; the plugin will read:
+
+```text
+$env:CODEX_HOME\auth.json
+```
+
+Manual override for a temporary shell session:
 
 ```powershell
 $env:OPENCODE_CODEX_ACCESS_TOKEN = "<access_token>"
 $env:OPENCODE_CODEX_ACCOUNT_ID = "<optional_account_id>"
 ```
 
-Persistent config alternative:
+Persistent override alternative:
 
 ```json
 {
@@ -75,7 +94,7 @@ Save it as:
 ~/.config/opencode/codex-usage.json
 ```
 
-`accountId` is optional for many personal ChatGPT accounts. If your ChatGPT login has multiple workspaces/accounts, include it.
+Manual auth values override `~/.codex/auth.json`. `accountId` is optional for many personal ChatGPT accounts. If your ChatGPT login has multiple workspaces/accounts, include it.
 
 ## Getting A Codex Token
 
@@ -85,7 +104,7 @@ After logging in with Codex CLI, credentials are normally stored in:
 ~/.codex/auth.json
 ```
 
-The access token is usually under `tokens.access_token`.
+The plugin reads `tokens.access_token` and a few compatible fallback fields. If the token expires, run `codex login` again and restart OpenCode if needed.
 
 Do not commit or share `auth.json`, `codex-usage.json`, or access tokens.
 
