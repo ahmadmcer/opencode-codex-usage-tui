@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url"
 import { homedir } from "node:os"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
+const projectRoot = resolve(__dirname, "..")
 const pluginEntry = "./plugins/codex-usage-tui.ts"
 
 function parseArgs(argv) {
@@ -40,14 +41,18 @@ function writeJson(path, value) {
 }
 
 function install(configDir) {
-  const source = join(__dirname, "tui.ts")
+  const source = join(projectRoot, "src", "tui.ts")
+  const coreSource = join(projectRoot, "src", "core.ts")
   const pluginDir = join(configDir, "plugins")
   const target = join(pluginDir, "codex-usage-tui.ts")
+  const coreTarget = join(pluginDir, "core.ts")
   const tuiJson = join(configDir, "tui.json")
 
   if (!existsSync(source)) throw new Error(`Missing source file: ${source}`)
+  if (!existsSync(coreSource)) throw new Error(`Missing source file: ${coreSource}`)
   mkdirSync(pluginDir, { recursive: true })
   copyFileSync(source, target)
+  copyFileSync(coreSource, coreTarget)
 
   const config = readJson(tuiJson)
   const plugins = Array.isArray(config.plugin) ? config.plugin : config.plugin ? [config.plugin] : []

@@ -4,14 +4,20 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$source = Join-Path $PSScriptRoot "tui.ts"
+$projectRoot = Split-Path -Parent $PSScriptRoot
+$source = Join-Path $projectRoot "src\tui.ts"
+$coreSource = Join-Path $projectRoot "src\core.ts"
 $pluginDir = Join-Path $ConfigDir "plugins"
 $target = Join-Path $pluginDir "codex-usage-tui.ts"
+$coreTarget = Join-Path $pluginDir "core.ts"
 $tuiJson = Join-Path $ConfigDir "tui.json"
 $pluginEntry = "./plugins/codex-usage-tui.ts"
 
 if (!(Test-Path -LiteralPath $source)) {
   throw "Missing source file: $source"
+}
+if (!(Test-Path -LiteralPath $coreSource)) {
+  throw "Missing source file: $coreSource"
 }
 
 if (!(Test-Path -LiteralPath $ConfigDir)) {
@@ -23,6 +29,7 @@ if (!(Test-Path -LiteralPath $pluginDir)) {
 }
 
 Copy-Item -LiteralPath $source -Destination $target -Force
+Copy-Item -LiteralPath $coreSource -Destination $coreTarget -Force
 
 if (Test-Path -LiteralPath $tuiJson) {
   $raw = Get-Content -LiteralPath $tuiJson -Raw
