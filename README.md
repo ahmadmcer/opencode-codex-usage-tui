@@ -23,7 +23,7 @@ Add the published package to OpenCode's TUI configuration:
 ```json
 {
   "$schema": "https://opencode.ai/tui.json",
-  "plugin": ["opencode-codex-usage-tui@1.3.2"]
+  "plugin": ["opencode-codex-usage-tui@1.3.3"]
 }
 ```
 
@@ -44,7 +44,7 @@ For example, a local file URL can be used when supported:
 ```json
 {
   "$schema": "https://opencode.ai/tui.json",
-  "plugin": ["file:///absolute/path/to/opencode-codex-usage-tui-1.3.2.tgz"]
+  "plugin": ["file:///absolute/path/to/opencode-codex-usage-tui-1.3.3.tgz"]
 }
 ```
 

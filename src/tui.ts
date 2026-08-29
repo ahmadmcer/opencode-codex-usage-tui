@@ -1,4 +1,5 @@
 import type { TuiPlugin, TuiPluginModule } from "@opencode-ai/plugin/tui"
+import { TextAttributes } from "@opentui/core"
 import { createElement, insert, setProp } from "@opentui/solid"
 import { fetchUsage, normalizePayload, type Credits, type NormalizedWindow, type UsageFailure } from "./core.js"
 
@@ -26,7 +27,9 @@ let collapsedInitialized = false
 async function fetchOnce() {
   if (!fetchRequested || inflight) return
   inflight = true
-  state = { ...state, status: "loading", message: undefined }
+  if (state.status !== "ok" || state.windows.length === 0)
+    state = { ...state, status: "loading", message: undefined }
+  else state = { ...state, message: undefined }
   try {
     const result = await fetchUsage()
     if (!result.ok) {
@@ -136,7 +139,7 @@ const tui: TuiPlugin = async (api) => {
         const normal = theme.text
         const valStyle = { fg: muted }
 
-        const headerTitle = valNode({ bold: true, fg: normal })
+        const headerTitle = valNode({ attributes: TextAttributes.BOLD, fg: normal })
         const headerSummary = valNode(valStyle)
         const planVal = valNode(valStyle)
         const creditsVal = valNode(valStyle)
