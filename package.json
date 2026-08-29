@@ -1,6 +1,6 @@
 {
-  "name": "@ahmadmcer/opencode-codex-usage",
-  "version": "1.3.0",
+  "name": "opencode-codex-usage-tui",
+  "version": "1.3.2",
   "description": "OpenCode TUI plugin that shows remaining ChatGPT Codex usage limits in the sidebar",
   "license": "MIT",
   "type": "module",
@@ -43,9 +43,9 @@
     "limits",
     "sidebar"
   ],
-  "homepage": "https://github.com/ahmadmcer/opencode-codex-usage",
+  "homepage": "https://github.com/ahmadmcer/opencode-codex-usage-tui",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ahmadmcer/opencode-codex-usage.git"
+    "url": "git+https://github.com/ahmadmcer/opencode-codex-usage-tui.git"
   }
 }

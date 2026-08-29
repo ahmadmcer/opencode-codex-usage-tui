@@ -4,10 +4,11 @@ import { fetchUsage, normalizePayload, type Credits, type NormalizedWindow, type
 
 const DASHBOARD_URL = "https://chatgpt.com/codex/settings/usage"
 const REFRESH_MS = 60_000
+const RENDER_MS = 1_000
 const COLLAPSED_KV_KEY = "codex-usage.collapsed"
 
 interface FetchState {
-  status: "idle" | "loading" | "ok" | "error" | "no-config" | "disabled"
+  status: "loading" | "ok" | "error" | "no-config" | "disabled"
   plan?: string
   windows: NormalizedWindow[]
   credits?: Credits
@@ -16,9 +17,9 @@ interface FetchState {
   lastFetch: number
 }
 
-let state: FetchState = { status: "idle", windows: [], lastFetch: 0 }
+let state: FetchState = { status: "loading", windows: [], lastFetch: 0 }
 let inflight = false
-let fetchRequested = false
+let fetchRequested = true
 let collapsed = true
 let collapsedInitialized = false
 
@@ -73,6 +74,11 @@ function fmtPct(pct: number): string {
   return `${pct.toFixed(1).padStart(5)}%`
 }
 
+function liveResetSeconds(usage: NormalizedWindow): number {
+  if (!state.lastFetch) return usage.resetInSec
+  return Math.max(0, usage.resetInSec - Math.floor((Date.now() - state.lastFetch) / 1000))
+}
+
 function remainingPercent(usedPercent: number): number {
   return Math.max(0, Math.min(100, 100 - usedPercent))
 }
@@ -83,7 +89,6 @@ function summaryText(): string {
   if (state.status === "no-config") return "(no config)"
   if (state.status === "disabled") return "(disabled)"
   if (state.status === "error") return `(${state.message ?? "error"})`
-  if (state.status === "idle") return "(expand to fetch)"
   return "(...)"
 }
 
@@ -118,7 +123,7 @@ function valNode(style: Record<string, unknown>): any {
 const tui: TuiPlugin = async (api) => {
   if (!collapsedInitialized) {
     collapsed = Boolean(api.kv.get(COLLAPSED_KV_KEY, true))
-    fetchRequested = !collapsed
+    fetchRequested = true
     collapsedInitialized = true
   }
 
@@ -162,7 +167,7 @@ const tui: TuiPlugin = async (api) => {
             setNodeText(view.reset, "")
             return
           }
-          const reset = fmtReset(usage.resetInSec)
+          const reset = fmtReset(liveResetSeconds(usage))
           setNodeText(view.label, usage.label)
           setNodeText(view.pct, `${fmtPct(remainingPercent(usage.usedPercent))} left${usage.limitReached ? " exhausted" : ""}`)
           setNodeText(view.reset, reset ? `reset ${reset}` : "")
@@ -177,7 +182,7 @@ const tui: TuiPlugin = async (api) => {
 
         function update() {
           const now = Date.now()
-          if (!collapsed && fetchRequested && (state.lastFetch === 0 || now - state.lastFetch > REFRESH_MS)) fetchOnce()
+          if (fetchRequested && (state.lastFetch === 0 || now - state.lastFetch > REFRESH_MS)) fetchOnce()
 
           setNodeText(headerTitle, collapsed ? "▶ Codex Usage" : "▼ Codex Usage")
           setNodeText(headerSummary, collapsed ? ` ${summaryText()}` : "")
@@ -214,12 +219,6 @@ const tui: TuiPlugin = async (api) => {
             setNodeText(creditsVal, "")
             setNodeText(resetsVal, "")
             setNodeText(statusVal, `${state.message ?? "error"}\n${DASHBOARD_URL}`)
-          } else if (state.status === "idle") {
-            setNodeText(planVal, "")
-            clearWindows()
-            setNodeText(creditsVal, "")
-            setNodeText(resetsVal, "")
-            setNodeText(statusVal, "expand Codex Usage to request usage")
           } else {
             setNodeText(planVal, "")
             clearWindows()
@@ -251,7 +250,7 @@ const tui: TuiPlugin = async (api) => {
         const root = box({ flexDirection: "column", width: "100%" }, [header, body])
 
         update()
-        const timer = setInterval(update, 2000)
+        const timer = setInterval(update, RENDER_MS)
         api.lifecycle.onDispose(() => clearInterval(timer))
 
         return root

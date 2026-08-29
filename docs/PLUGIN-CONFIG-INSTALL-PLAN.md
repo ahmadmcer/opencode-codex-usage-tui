@@ -2,7 +2,7 @@
 
 ## Goal
 
-Make `@ahmadmcer/opencode-codex-usage` load directly from OpenCode's `tui.json` `plugin` array rather than copying its source files into `~/.config/opencode/plugins`.
+Make `opencode-codex-usage-tui` load directly from OpenCode's `tui.json` `plugin` array rather than copying its source files into `~/.config/opencode/plugins`.
 
 OpenCode supports npm package specs in `tui.json`. A package TUI module must have a default export shaped as `{ id?, tui }`, and its package metadata must expose the TUI entry point.
 
@@ -20,7 +20,7 @@ Document this as the supported installation method after publishing the package:
 ```json
 {
   "$schema": "https://opencode.ai/tui.json",
-  "plugin": ["@ahmadmcer/opencode-codex-usage@<version>"]
+  "plugin": ["opencode-codex-usage-tui@<version>"]
 }
 ```
 

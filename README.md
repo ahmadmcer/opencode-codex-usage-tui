@@ -1,4 +1,4 @@
-# opencode-codex-usage
+# opencode-codex-usage-tui
 
 OpenCode TUI plugin that shows remaining ChatGPT Codex usage limits in the sidebar.
 
@@ -12,7 +12,8 @@ It reads the same internal Codex usage data shown by the ChatGPT Codex usage das
 - Shows the ChatGPT plan in uppercase, for example `PLUS`
 - Supports collapsed and expanded sidebar display
 - Automatically reads trusted Codex CLI auth from `~/.codex/auth.json`
-- Fetches usage only when the sidebar section is expanded
+- Continuously refreshes usage in the background
+- Updates reset countdowns in realtime between API refreshes
 - Supports disabling requests with `OPENCODE_CODEX_USAGE_DISABLED=true`
 
 ## Install
@@ -22,7 +23,7 @@ Add the published package to OpenCode's TUI configuration:
 ```json
 {
   "$schema": "https://opencode.ai/tui.json",
-  "plugin": ["@ahmadmcer/opencode-codex-usage@1.3.0"]
+  "plugin": ["opencode-codex-usage-tui@1.3.2"]
 }
 ```
 
@@ -43,7 +44,7 @@ For example, a local file URL can be used when supported:
 ```json
 {
   "$schema": "https://opencode.ai/tui.json",
-  "plugin": ["file:///absolute/path/to/ahmadmcer-opencode-codex-usage-1.3.0.tgz"]
+  "plugin": ["file:///absolute/path/to/opencode-codex-usage-tui-1.3.2.tgz"]
 }
 ```
 
@@ -69,7 +70,7 @@ To disable the usage request entirely for a shell session:
 $env:OPENCODE_CODEX_USAGE_DISABLED = "true"
 ```
 
-The section starts collapsed and makes its first request when expanded. It refreshes at most once per minute while expanded.
+The section starts collapsed but begins fetching immediately. Reset countdowns render live, while usage data refreshes at most once per minute to avoid rate limits.
 
 ## Getting A Codex Token
 
