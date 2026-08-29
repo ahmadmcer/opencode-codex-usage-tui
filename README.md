@@ -17,41 +17,35 @@ It reads the same internal Codex usage data shown by the ChatGPT Codex usage das
 
 ## Install
 
-Install with `npx` from GitHub:
+Add the published package to OpenCode's TUI configuration:
+
+```json
+{
+  "$schema": "https://opencode.ai/tui.json",
+  "plugin": ["@ahmadmcer/opencode-codex-usage@1.3.0"]
+}
+```
+
+OpenCode resolves the npm package and loads its `./tui` entry point directly. No files are copied into the OpenCode configuration directory. Pin the version for reproducible setups, or omit the version when you want OpenCode to resolve the latest release.
+
+For local development, build and pack the project:
 
 ```powershell
-npx github:ahmadmcer/opencode-codex-usage
+npm install
+npm run check
+npm pack
 ```
 
-Do not use `npx opencode-codex-usage`; that unscoped npm package name belongs to another project.
+Then reference the generated tarball in `tui.json` using the local package spec supported by your OpenCode installation. Restart OpenCode after editing `tui.json`; TUI plugins are loaded at startup.
 
-If this package is published to npm later, use the scoped package name:
+For example, a local file URL can be used when supported:
 
-```powershell
-npx @ahmadmcer/opencode-codex-usage
+```json
+{
+  "$schema": "https://opencode.ai/tui.json",
+  "plugin": ["file:///absolute/path/to/ahmadmcer-opencode-codex-usage-1.3.0.tgz"]
+}
 ```
-
-For local development from this folder:
-
-```powershell
-node .\scripts\install.mjs
-```
-
-PowerShell-only local installer alternative:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1
-```
-
-The installer copies the TUI modules from `src/` to:
-
-```text
-~/.config/opencode/plugins/codex-usage-tui.ts
-```
-
-It also adds `./plugins/codex-usage-tui.ts` to `~/.config/opencode/tui.json` if it is not already registered.
-
-Restart OpenCode after installing. TUI plugins are loaded at startup.
 
 ## Configure Auth
 
