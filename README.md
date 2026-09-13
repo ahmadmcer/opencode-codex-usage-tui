@@ -14,39 +14,83 @@ It reads the same internal Codex usage data shown by the ChatGPT Codex usage das
 - Automatically reads trusted Codex CLI auth from `~/.codex/auth.json`
 - Continuously refreshes usage in the background
 - Updates reset countdowns in realtime between API refreshes
+- Supports configuring displayed sections and usage windows
 - Supports disabling requests with `OPENCODE_CODEX_USAGE_DISABLED=true`
 
 ## Install
 
-Add the published package to OpenCode's TUI configuration:
+Add the package to OpenCode's TUI configuration:
 
 ```json
 {
   "$schema": "https://opencode.ai/tui.json",
-  "plugin": ["opencode-codex-usage-tui@1.3.3"]
+  "plugin": ["opencode-codex-usage-tui"]
 }
 ```
 
 OpenCode resolves the npm package and loads its `./tui` entry point directly. No files are copied into the OpenCode configuration directory. Pin the version for reproducible setups, or omit the version when you want OpenCode to resolve the latest release.
 
-For local development, build and pack the project:
+## Configuration
 
-```powershell
-npm install
-npm run check
-npm pack
-```
+These display options require a build or supporting release that includes them; the older published `1.3.3` package does not include them. Add them as the second item in the plugin tuple:
 
-Then reference the generated tarball in `tui.json` using the local package spec supported by your OpenCode installation. Restart OpenCode after editing `tui.json`; TUI plugins are loaded at startup.
+| Option | Values | Default |
+| --- | --- | --- |
+| `windows` | `"all"` or `"primary"` | `"all"`: show up to the first four sorted windows |
+| `show` | Array of `"plan"`, `"windows"`, `"credits"`, and/or `"resets"` | All four sections |
 
-For example, a local file URL can be used when supported:
+`windows: "primary"` is strict: it shows only the main API `rate_limit.primary_window`. The shortest, secondary, or additional window is not a substitute. Other quotas remain enforced but hidden. If the main primary window is missing, no fallback window is shown; plan and credit information remain available when their sections are enabled. `windows: "all"` shows up to the first four sorted windows.
+
+`show` is an allowlist, not a layout setting. Listed sections render in the fixed order `plan`, `windows`, `credits`, `resets`; duplicates are harmless. `[]` hides all optional sections, while the header and operational statuses remain available. `resets` is the separate credit-reset row, not a countdown for each usage window. When `windows` is hidden, usage summaries and the primary-unavailable status are not exposed. Operational errors remain available.
+
+Primary-only display example:
 
 ```json
 {
   "$schema": "https://opencode.ai/tui.json",
-  "plugin": ["file:///absolute/path/to/opencode-codex-usage-tui-1.3.3.tgz"]
+  "plugin": [["opencode-codex-usage-tui", { "show": ["plan", "windows"], "windows": "primary" }]]
 }
 ```
+
+Replace the existing plugin entry rather than adding another one. Keep any package version pin in the first tuple element, but use a local build or supporting release that includes these options. Bare registration, empty options, and omitted `show` or `windows` retain their defaults. Invalid values and unknown option keys are reported together in one aggregated startup warning; recognized valid fields are retained. Invalid `windows` values use `"all"`; a non-array `show` uses all sections; invalid entries in a `show` array are ignored while valid entries are retained. Changes take effect after rebuilding when needed, then restarting OpenCode.
+
+To restore the defaults, remove the whole options object (bare registration), or set `show` to all four sections and `windows` to `"all"`. Setting `windows` to `"all"` alone does not restore sections hidden by `show`.
+
+## Development
+
+For local development, build, test, check, and pack the project:
+
+```powershell
+npm install
+npm run build
+npm test
+npm run check
+npm pack
+```
+
+For the same local `show` workflow, reference the built module directly in `tui.json`:
+
+```json
+{
+  "$schema": "https://opencode.ai/tui.json",
+  "plugin": [["file:///absolute/path/to/opencode-codex-usage-tui/dist/tui.js", { "show": ["plan", "windows"], "windows": "primary" }]]
+}
+```
+
+This direct `file://` entry loads the module at `dist/tui.js`; it does not install or extract a `.tgz` tarball. Rebuilding the repository updates this direct-file installation. If you test the exact `npm pack` artifact, extract the generated tarball and target the extracted package's `dist/tui.js` instead, keeping the package's other `dist` files together:
+
+```json
+{
+  "$schema": "https://opencode.ai/tui.json",
+  "plugin": [["file:///absolute/path/to/extracted/package/dist/tui.js", { "show": ["plan", "windows"], "windows": "primary" }]]
+}
+```
+
+An already extracted copy or tarball does not change when the repository is rebuilt; rebuild and replace that copy when testing it. Quit and restart OpenCode after changing `tui.json` or the loaded build so the plugin is reloaded.
+
+### Release verification
+
+Automated unit, build, syntax, and package checks do not verify OpenCode UI rendering or compatibility with the minimum supported host version. Before publishing, perform an isolated runtime smoke check in the target host covering tuple options, collapsed and expanded primary-window display, missing-primary and error states, and once-only warnings.
 
 ## Configure Auth
 
