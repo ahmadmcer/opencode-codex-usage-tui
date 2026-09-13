@@ -5,8 +5,8 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "build": "esbuild src/tui.ts src/core.ts --outdir=dist --format=esm --platform=node --packages=external",
-    "check": "npm run build && node --check dist/tui.js && node --check dist/core.js",
+    "build": "esbuild src/tui.ts src/core.ts src/display.ts --outdir=dist --format=esm --platform=node --packages=external",
+    "check": "npm run build && node --check dist/tui.js && node --check dist/core.js && node --check dist/display.js",
     "prepack": "npm run build"
   },
   "exports": {
