@@ -58,12 +58,11 @@ To restore the defaults, remove the whole options object (bare registration), or
 
 ## Development
 
-For local development, build, test, check, and pack the project:
+For local development, build, check, and pack the project:
 
 ```powershell
 npm install
 npm run build
-npm test
 npm run check
 npm pack
 ```
@@ -90,7 +89,7 @@ An already extracted copy or tarball does not change when the repository is rebu
 
 ### Release verification
 
-Automated unit, build, syntax, and package checks do not verify OpenCode UI rendering or compatibility with the minimum supported host version. Before publishing, perform an isolated runtime smoke check in the target host covering tuple options, collapsed and expanded primary-window display, missing-primary and error states, and once-only warnings.
+Build, syntax, and package checks do not verify OpenCode UI rendering or compatibility with the minimum supported host version. Before publishing, perform an isolated runtime smoke check in the target host covering tuple options, collapsed and expanded primary-window display, missing-primary and error states, and once-only warnings.
 
 ## Configure Auth
 
