@@ -2,6 +2,7 @@ import type { TuiPlugin, TuiPluginModule } from "@opencode-ai/plugin/tui"
 import { TextAttributes } from "@opentui/core"
 import { createElement, insert, setProp } from "@opentui/solid"
 import { fetchUsage, normalizePayload, type Credits, type NormalizedWindow, type UsageFailure } from "./core.js"
+import { parseDisplayOptions, selectDisplayWindows } from "./display.js"
 
 const DASHBOARD_URL = "https://chatgpt.com/codex/settings/usage"
 const REFRESH_MS = 60_000
@@ -86,9 +87,11 @@ function remainingPercent(usedPercent: number): number {
   return Math.max(0, Math.min(100, 100 - usedPercent))
 }
 
-function summaryText(): string {
-  const first = state.windows[0]
+function summaryText(windows: NormalizedWindow[], primaryUnavailable: boolean): string {
+  const first = windows[0]
   if (state.status === "ok" && first) return `(${first.label} ${remainingPercent(first.usedPercent).toFixed(1)}% left)`
+  if (state.status === "ok" && primaryUnavailable) return "(primary unavailable)"
+  if (state.status === "ok") return ""
   if (state.status === "no-config") return "(no config)"
   if (state.status === "disabled") return "(disabled)"
   if (state.status === "error") return `(${state.message ?? "error"})`
@@ -123,7 +126,13 @@ function valNode(style: Record<string, unknown>): any {
   return txt(style, [""])
 }
 
-const tui: TuiPlugin = async (api) => {
+const tui: TuiPlugin = async (api, rawOptions) => {
+  const { options, diagnostics } = parseDisplayOptions(rawOptions)
+  if (diagnostics.length) api.ui.toast({
+    variant: "warning",
+    title: "Codex Usage configuration",
+    message: `${diagnostics.join(" ")} Update the plugin options in tui.json, then quit and restart OpenCode.`,
+  })
   if (!collapsedInitialized) {
     collapsed = Boolean(api.kv.get(COLLAPSED_KV_KEY, true))
     fetchRequested = true
@@ -187,12 +196,15 @@ const tui: TuiPlugin = async (api) => {
           const now = Date.now()
           if (fetchRequested && (state.lastFetch === 0 || now - state.lastFetch > REFRESH_MS)) fetchOnce()
 
+          const showWindows = options.show.includes("windows")
+          const windows = state.status === "ok" && showWindows ? selectDisplayWindows(state.windows, options.windows) : []
+          const primaryUnavailable = state.status === "ok" && showWindows && options.windows === "primary" && windows.length === 0
+          const summary = collapsed ? summaryText(windows, primaryUnavailable) : ""
           setNodeText(headerTitle, collapsed ? "▶ Codex Usage" : "▼ Codex Usage")
-          setNodeText(headerSummary, collapsed ? ` ${summaryText()}` : "")
-          setProp(headerSummary, "visible", collapsed)
+          setNodeText(headerSummary, summary ? ` ${summary}` : "")
+          setProp(headerSummary, "visible", Boolean(summary))
 
           if (state.status === "ok") {
-            const windows = state.windows
             setNodeText(planVal, (state.plan ?? "Unknown").toUpperCase())
             setUsageWindow(primary, windows[0])
             setUsageWindow(secondary, windows[1])
@@ -203,7 +215,7 @@ const tui: TuiPlugin = async (api) => {
               state.credits ? (state.credits.hasCredits ? (state.credits.unlimited ? "unlimited" : state.credits.balance) : "none") : "",
             )
             setNodeText(resetsVal, state.resetCredits === undefined ? "" : `${state.resetCredits} available`)
-            setNodeText(statusVal, "")
+            setNodeText(statusVal, primaryUnavailable ? "Primary usage window unavailable" : "")
           } else if (state.status === "no-config") {
             setNodeText(planVal, "")
             clearWindows()
@@ -229,6 +241,10 @@ const tui: TuiPlugin = async (api) => {
             setNodeText(resetsVal, "")
             setNodeText(statusVal, "loading")
           }
+          setProp(planRow, "visible", state.status === "ok" && options.show.includes("plan"))
+          setProp(creditsRow, "visible", state.status === "ok" && options.show.includes("credits"))
+          setProp(resetsRow, "visible", state.status === "ok" && options.show.includes("resets"))
+          setProp(statusVal, "visible", state.status !== "ok" || primaryUnavailable)
         }
 
         function toggle() {
@@ -240,14 +256,17 @@ const tui: TuiPlugin = async (api) => {
         }
 
         const header = box({ flexDirection: "row", width: "100%", onMouseUp: () => toggle() }, [headerTitle, headerSummary])
+        const planRow = box({ flexDirection: "row", width: "100%", justifyContent: "space-between" }, [txt({ fg: muted }, ["Plan"]), planVal])
+        const creditsRow = box({ flexDirection: "row", width: "100%", justifyContent: "space-between" }, [txt({ fg: muted }, ["Credits"]), creditsVal])
+        const resetsRow = box({ flexDirection: "row", width: "100%", justifyContent: "space-between" }, [txt({ fg: muted }, ["Resets"]), resetsVal])
         const body = box({ flexDirection: "column", width: "100%", visible: !collapsed }, [
-          box({ flexDirection: "row", width: "100%", justifyContent: "space-between" }, [txt({ fg: muted }, ["Plan"]), planVal]),
+          planRow,
           primary.block,
           secondary.block,
           extraOne.block,
           extraTwo.block,
-          box({ flexDirection: "row", width: "100%", justifyContent: "space-between" }, [txt({ fg: muted }, ["Credits"]), creditsVal]),
-          box({ flexDirection: "row", width: "100%", justifyContent: "space-between" }, [txt({ fg: muted }, ["Resets"]), resetsVal]),
+          creditsRow,
+          resetsRow,
           statusVal,
         ])
         const root = box({ flexDirection: "column", width: "100%" }, [header, body])
