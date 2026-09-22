@@ -74,7 +74,12 @@ function fmtReset(resetSec: number): string {
 }
 
 function fmtPct(pct: number): string {
-  return `${pct.toFixed(1).padStart(5)}%`
+  return `${Math.round(pct)}%`
+}
+
+function fmtCredits(balance: string): string {
+  const amount = Number(balance)
+  return Number.isFinite(amount) ? amount.toFixed(2) : balance
 }
 
 function liveResetSeconds(usage: NormalizedWindow): number {
@@ -135,9 +140,8 @@ const tui: TuiPlugin = async (api) => {
     slots: {
       sidebar_content() {
         const theme = api.theme.current as any
-        const muted = theme.textMuted
         const normal = theme.text
-        const valStyle = { fg: muted }
+        const valStyle = { fg: normal }
 
         const headerTitle = valNode({ attributes: TextAttributes.BOLD, fg: normal })
         const headerSummary = valNode(valStyle)
@@ -147,14 +151,10 @@ const tui: TuiPlugin = async (api) => {
         const statusVal = valNode(valStyle)
 
         function usageBlock() {
-          const label = valNode({ fg: muted })
+          const label = valNode({ fg: normal })
           const pct = valNode(valStyle)
-          const reset = valNode(valStyle)
-          const block = box({ flexDirection: "column", width: "100%" }, [
-            box({ flexDirection: "row", width: "100%", justifyContent: "space-between" }, [label, pct]),
-            box({ flexDirection: "row", width: "100%", justifyContent: "flex-end" }, [reset]),
-          ])
-          return { block, label, pct, reset }
+          const block = box({ flexDirection: "row", width: "100%", justifyContent: "space-between" }, [label, pct])
+          return { block, label, pct }
         }
 
         const primary = usageBlock()
@@ -167,13 +167,11 @@ const tui: TuiPlugin = async (api) => {
           if (!usage) {
             setNodeText(view.label, "")
             setNodeText(view.pct, "")
-            setNodeText(view.reset, "")
             return
           }
           const reset = fmtReset(liveResetSeconds(usage))
           setNodeText(view.label, usage.label)
-          setNodeText(view.pct, `${fmtPct(remainingPercent(usage.usedPercent))} left${usage.limitReached ? " exhausted" : ""}`)
-          setNodeText(view.reset, reset ? `reset ${reset}` : "")
+          setNodeText(view.pct, `${fmtPct(remainingPercent(usage.usedPercent))}${reset ? ` (${reset})` : ""}${usage.limitReached ? " exhausted" : ""}`)
         }
 
         function clearWindows() {
@@ -200,7 +198,7 @@ const tui: TuiPlugin = async (api) => {
             setUsageWindow(extraTwo, windows[3])
             setNodeText(
               creditsVal,
-              state.credits ? (state.credits.hasCredits ? (state.credits.unlimited ? "unlimited" : state.credits.balance) : "none") : "",
+              state.credits ? (state.credits.hasCredits ? (state.credits.unlimited ? "unlimited" : fmtCredits(state.credits.balance)) : "none") : "",
             )
             setNodeText(resetsVal, state.resetCredits === undefined ? "" : `${state.resetCredits} available`)
             setNodeText(statusVal, "")
@@ -241,13 +239,13 @@ const tui: TuiPlugin = async (api) => {
 
         const header = box({ flexDirection: "row", width: "100%", onMouseUp: () => toggle() }, [headerTitle, headerSummary])
         const body = box({ flexDirection: "column", width: "100%", visible: !collapsed }, [
-          box({ flexDirection: "row", width: "100%", justifyContent: "space-between" }, [txt({ fg: muted }, ["Plan"]), planVal]),
+          box({ flexDirection: "row", width: "100%", justifyContent: "space-between" }, [txt({ fg: normal }, ["Plan"]), planVal]),
           primary.block,
           secondary.block,
           extraOne.block,
           extraTwo.block,
-          box({ flexDirection: "row", width: "100%", justifyContent: "space-between" }, [txt({ fg: muted }, ["Credits"]), creditsVal]),
-          box({ flexDirection: "row", width: "100%", justifyContent: "space-between" }, [txt({ fg: muted }, ["Resets"]), resetsVal]),
+          box({ flexDirection: "row", width: "100%", justifyContent: "space-between" }, [txt({ fg: normal }, ["Credits"]), creditsVal]),
+          box({ flexDirection: "row", width: "100%", justifyContent: "space-between" }, [txt({ fg: normal }, ["Resets"]), resetsVal]),
           statusVal,
         ])
         const root = box({ flexDirection: "column", width: "100%" }, [header, body])
