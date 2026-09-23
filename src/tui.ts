@@ -141,18 +141,19 @@ const tui: TuiPlugin = async (api) => {
       sidebar_content() {
         const theme = api.theme.current as any
         const normal = theme.text
-        const valStyle = { fg: normal }
+        const muted = theme.textMuted
+        const valueStyle = { fg: muted }
 
         const headerTitle = valNode({ attributes: TextAttributes.BOLD, fg: normal })
-        const headerSummary = valNode(valStyle)
-        const planVal = valNode(valStyle)
-        const creditsVal = valNode(valStyle)
-        const resetsVal = valNode(valStyle)
-        const statusVal = valNode(valStyle)
+        const headerSummary = valNode(valueStyle)
+        const planVal = valNode(valueStyle)
+        const creditsVal = valNode(valueStyle)
+        const resetsVal = valNode(valueStyle)
+        const statusVal = valNode(valueStyle)
 
         function usageBlock() {
           const label = valNode({ fg: normal })
-          const pct = valNode(valStyle)
+          const pct = valNode(valueStyle)
           const block = box({ flexDirection: "row", width: "100%", justifyContent: "space-between" }, [label, pct])
           return { block, label, pct }
         }
